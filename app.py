@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 df = pd.read_csv('startups_cleaned.csv')
 st.set_page_config(layout="wide",page_title='StartUp Analysis')
 
+
 def load_overall_analysis():
     st.title('Overall Analysis')
     # total invested amount
@@ -12,7 +13,7 @@ def load_overall_analysis():
     # max amount invested in a startup
     max_funding = round(df.groupby('startup')['amount_in_inr'].max().sort_values(ascending=False).head(1).values[0])
     # avg amount invested in startup
-    avg_amount = df.groupby('startup')['amount_in_inr'].sum().mean()
+    avg_amount = round(df.groupby('startup')['amount_in_inr'].sum().mean())
     # total founded startups
     num_startups = df['startup'].nunique()
     col1,col2,col3,col4 = st.columns(4)
@@ -41,7 +42,28 @@ def load_overall_analysis():
 
     st.pyplot(fig3)
 
+def load_startup_details(startup):
+    st.title(startup)
+    col1,col2=st.columns(2)
+    with col1:
+        #biggest investor
+        big_investor = df[df['startup'].str.contains(startup)].groupby('investor')['amount_in_inr'].sum().sort_values(ascending=False).head()
+        st.subheader("Biggest Investor")
+        fig4, ax4 = plt.subplots()
+        ax4.bar(big_investor.index,big_investor.values)
+        st.pyplot(fig4)
 
+    with col2:
+        big_sector = df[df['startup'].str.contains(startup)].groupby('vertical')['amount_in_inr'].sum().sort_values(ascending=False).head()
+        st.subheader("Biggest Sectoral Investment")
+        fig5, ax5 = plt.subplots()
+        ax5.pie(big_sector,labels=big_sector.index,autopct='%1.1f%%')
+        st.pyplot(fig5)
+    total_city = df[df['startup'].str.contains(startup)].groupby('city')['startup'].count().sort_values(ascending=False).head()
+    st.subheader("City wise startup count")
+    fig6, ax6 = plt.subplots()
+    ax6.bar(total_city.index,total_city.values)
+    st.pyplot(fig6)
 def load_investor_details(investor):
     st.title(investor)
     # load the recent 5 investment of the investor
@@ -83,8 +105,10 @@ option = st.sidebar.selectbox('Select One', ['Overall Analysis', 'StartUp', 'Inv
 if option == 'Overall Analysis':
     load_overall_analysis()
 elif option == 'StartUp':
-    st.sidebar.selectbox('Select StartUp', sorted(df['startup'].unique().tolist()))
-    st.title('StartUp Analysis')
+    selected_startup = st.sidebar.selectbox('Select StartUp', sorted(df['startup'].unique().tolist()))
+    btn1 = st.sidebar.button('Find Startup Details')
+    if btn1:
+        load_startup_details(selected_startup)
 else:
     selected_investor = st.sidebar.selectbox('Select Investor', sorted(set(df['investor'].str.split(',').sum())))
     btn2 = st.sidebar.button('Find Investor Details')
